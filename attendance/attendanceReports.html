@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+ 
+    <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+
+    <link href='http://fonts.googleapis.com/css?family=Khmer' rel='stylesheet' type='text/css'>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+ 
+ 
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+
+
+<title>PIO Attendance Reports</title>
+
+
+
+<script type="text/javascript">
+
+  
+
+    </script>
+
+    <style>
+
+th {background-color: lightblue; color: green; text-align: center;}
+
+td {text-align: center;}
+
+#reports {font-family: sans-serif; font-size: 1em;}
+
+#downloadLink {margin: 20px ; background-color:lightblue; color:green; font-size: 1.5em;}
+
+#chosenYear {text-align: center; width: 1; size: 4;}
+
+.c {width: auto; text-align: center;}
+
+h1 {color: green; font-size: 1.8em; text-align: center;}
+
+</style>
+</head>
+
+<body>
+
+    <div class  = "container-fluid">
+
+        <div class = "row">
+            <div class = "col-12 c">
+              <h1>PIO Attendance Reports</h1>
+                </div></div>
+
+<div class = "row">
+
+  <div class = "col-12 c">
+    <button  id = "todayBtn" class="btn btn-success btn-lg long">Today (AM)</button>
+     <a href = "addPermission.html"><button  id = "permission" class="btn btn-primary btn-lg long">Permission</button></a>
+   <a href = "pioMonthlyAttendanceReportNewv2.html" target = "_blank"> 
+    <button id = "monthv5" class="btn btn-warning btn-lg long">Attendance Month - PIO</button></a>
+    <a href = "moeysMonthlyAttendanceReportv5.html">
+      <!--
+    <button  id = "year" class="btn btn-danger btn-lg long">Attendance Month - MOEYS</button></a>
+
+        <a href = "moeysDailyAttendanceReport.html">
+    <button  id = "year" class="btn btn-primary btn-lg long">Daily Attendance - MOEYS</button></a>
+
+
+    <a href = "moeysEnrolmentsMultiNew.php">
+      <button  id = "stats" class="btn btn-info btn-lg long">Enrolments Month - MOEYS</button>
+   <a href = "yoursHumanlyAttendanceQuery.php"> <button  id = "year" class="btn btn-primary btn-lg long">Yours Humanly</button></a>
+-->
+     <a href = "allPIOAttendanceQuery.php"> <button  id = "year" class="btn btn-warning btn-lg long">Custom report</button></a>
+  </div>
+ </div>
+
+  <div class = "row">
+      <div class = "col-12 c">
+        <h2 id = "dateHeading"></h2>
+          </div></div>
+<div id = "monthlyReport"></div>
+  <div id = "dashboard">
+   <div class = "row">
+            <div class = "col-12 c">
+ <div id = "yearMonth"></div>
+</div></div>
+
+   <div class = "row">
+            <div class = "col-6 c">
+        <div id = "table_div"></div>
+      </div>
+      <div class = "col-6 c">
+        <div id = "chart_div"></div>
+      </div>
+       
+          <div class = "row">
+            <div class = "col-12 c">
+          <div id = "reports"></div>
+
+      </div></div>
+      </div>
+
+
+  <table id = "todayTable" width = "80%" align = "center" border = "1">
+    <tr><th>Grade</th><th>Absent</th><th>Present</th><th>Total</th><th>Percent</th><th>Time</th><th>Date</th></tr>
+</table>
+<div id = "table_div"></div>
+
+  <div class = "row">
+      <div class = "col-12 c">
+        <div id = "completed"></div>
+          </div></div>
+
+
+  </div>    
+
+    <div class = "row">
+      <div class = "col-12 c">
+        <div id = "lowest"></div>
+          </div></div>
+
+
+  </div>   
+
+</body>
+</html>
+
+<script>
+
+  $(document).ready(function(){
+  
+   const d = new Date();
+   hour = d.getHours();
+   day = d.getDate();
+   min = d.getMinutes() ;
+   month = d.getMonth() + 1;
+   year = d.getFullYear()
+  
+  data = [] ;  // loaded from the database
+  
+  if (day < 10) {day = '0' + day; }
+  if (month < 10) {month ='0' + month; }
+  today = year + '-' + month + '-' + day;
+  
+  dateText = d.toString() ;
+  dateText = dateText.substr(0,15);
+  $('#dateHeading').text(dateText) ;
+  $('#todayTable').hide() ;
+
+  $('#lowest').load("lowestAttendanceMonth.php");
+  
+  })
+  
+  </script>
+
+
+
+
+
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+     
+  $('#month').on("click", function() {
+
+if (month < 10) {month = '0' + month;}
+if (day < 10) {day = '0' + month;}
+
+yearMonth = today = year + '-' + month ;
+
+
+  
+alert('Monthly report for ' + yearMonth) ;
+
+
+$('#reports').empty() ;
+var url = "http://attendance.pio-students.net/pioMonthlyAttendanceAllv5.php?yearMonth=" + yearMonth;
+$('#reports').load(url);
+                    
+
+
+})
+})
+
+</script>
+
+
+
+<script type="text/javascript">
+
+
+$(document).ready(function(){
+     
+  $('#stats').on("click", function() {
+
+  })
+})
+
+</script>
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+     
+  $('#todayBtn').on("click", function() {
+
+    $('#reports').empty() ;
+    $('#todayTable').empty() ;
+    $('#reports').show(); 
+    $('#today').prop('disabled',true);
+
+  
+ // if (month < 10) {month = '0' + month;}
+ // if (day < 10) {day = '0' + day;}
+  today = year + '-' + month + '-' + day;
+  alert('Report for ' + today) ;
+
+console.log(today) ;
+     $.ajax({
+  url: 'dailyAttendanceQuery.php',
+  type: 'POST',
+  data: {today:today}, 
+  datatype: 'json'
+})  // parameters
+.done(function (response) { 
+data = JSON.parse(response) ;
+
+var dataKeys = [] ;
+ console.log("Data",data) ;
+ $('#todayTable').show() ;
+
+var header = '<tr><th>Grade</th><th>Absent</th><th>Present</th><th>Total</th><th>Percent</th><th>Time</th><th>Date</th></tr>' ;
+
+
+$('#todayTable').last().append(header);
+
+for(var i = 0 ; i < data.length ; i++)
+    {
+  // put data into table   
+
+var grade = data[i]["Grade"];
+var total = data[i]["Total"]
+var absent = data[i]["Absent"];
+var present = data[i]["Present"] ;
+var percent = data[i]["Percent"] ;
+
+var shortTime = data[i]["shortTime"];
+var shortDate = data[i]["shortDate"];
+
+var row = '<tr><td>' + 
+      grade + '</td><td>' + 
+      absent + '</td><td>' + 
+      present + '</td><td>' + 
+      total + '</td><td>' + 
+      percent + '</td><td>' +
+      shortTime + '</td><td>' +
+      shortDate + '</td></tr>'  ;
+
+$('#todayTable').last().append(row);
+
+// console.log(row);
+
+}
+
+
+                    
+
+})  //done
+
+.fail(function (jqXHR, textStatus, errorThrown) { 
+alert("Failure " + jqXHR + ' ' + textStatus + ' error detected' + errorThrown) ;
+
+})  // fail
+
+})
+  })
+
+</script>
+
