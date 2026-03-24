@@ -1,18 +1,14 @@
 <?php 
-
 // require_once "../authCheckPIO.php";
 // restrictToAdmin();
-include "../connectDatabase.php" ; 
+include "../connectDatabase.php"; 
 
-
-// --- NEW CODE: Fetch the current classes ---
-// We use MAX(Year) to automatically grab the active school year (e.g., 2025/2026)
+// --- Fetch the current classes ---
 $yearQuery = "SELECT MAX(Year) FROM New_ID_Year_Grade";
 $yearResult = mysqli_query($dbServer, $yearQuery);
 $yearData = mysqli_fetch_row($yearResult);
 $currentYear = $yearData[0];
 
-// Fetch all unique grades for the current school year, sorted alphabetically
 $gradeQuery = "SELECT DISTINCT Grade FROM New_ID_Year_Grade WHERE Year = '$currentYear' ORDER BY Grade ASC";
 $gradeResult = mysqli_query($dbServer, $gradeQuery);
 $activeGrades = [];
@@ -24,7 +20,7 @@ while ($row = mysqli_fetch_assoc($gradeResult)) {
 }
 // -------------------------------------------
 
-$date = date('Y-m-d') ; // Changed to standard DB format
+$date = date('Y-m-d'); // Standard DB format
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -73,27 +69,19 @@ $date = date('Y-m-d') ; // Changed to standard DB format
 
 <div class="container py-4">
     <div class="row mb-4 align-items-end">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <h2 class="text-primary mb-0">Mark Roll</h2>
             <small class="text-muted"><?php echo date('D, d M Y'); ?></small>
         </div>
         
-     <div class="col-md-2">
-    <label class="form-label fw-bold">Select Class</label>
-    <select class="form-select" id="selectGrade">
-        <?php foreach ($activeGrades as $grade): ?>
-            <option value="<?php echo htmlspecialchars($grade); ?>">
-                <?php echo htmlspecialchars($grade); ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</div>
-        
-        <div class="col-md-2">
-            <label class="form-label fw-bold">Time</label>
-            <select class="form-select" id="time">
-                <option value="08:00">AM</option>
-                <option value="13:00">PM</option>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Select Class</label>
+            <select class="form-select" id="selectGrade">
+                <?php foreach ($activeGrades as $grade): ?>
+                    <option value="<?php echo htmlspecialchars($grade); ?>">
+                        <?php echo htmlspecialchars($grade); ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
         </div>
 
@@ -120,19 +108,18 @@ $(document).ready(function() {
     $('#load').click(function() {
         const grade = $('#selectGrade').val();
         $('#btnContainer').empty();
-        $('#save').prop('disabled', false);
+        $('#save').prop('disabled', false).text('Save Attendance');
         $('#message').addClass('d-none');
 
         $.ajax({
             url: 'loadButtons.php',
             type: 'POST',
-            dataType: 'json', // Expect clean JSON back
+            dataType: 'json', 
             data: { studentGrade: grade }
         }).done(function(data) {
             studentData = data;
             
             $.each(data, function(index, student) {
-                // Default everyone to 'N' (Absent) initially
                 student.status = 'N'; 
                 
                 const btn = $('<button>')
@@ -145,8 +132,10 @@ $(document).ready(function() {
                 
                 $('#btnContainer').append(btn);
             });
-        }).fail(function() {
-            alert("Error loading students.");
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            alert("Error loading students. Check the console for details.");
+            console.log("AJAX Error:", textStatus, errorThrown);
+            console.log("Server responded with:", jqXHR.responseText);
         });
     });
 
@@ -156,28 +145,28 @@ $(document).ready(function() {
         const index = btn.attr('data-index');
         const currentState = btn.attr('data-status');
         
-        // Calculate new state
         const newState = nextState[currentState];
         
-        // Update the button visuals
         btn.removeClass('state-' + currentState).addClass('state-' + newState);
         btn.attr('data-status', newState);
         btn.find('.state-label').text(stateLabels[newState]);
         
-        // Update the data array
         studentData[index].status = newState;
     });
 
     // Save Data
     $('#save').click(function() {
-        const time = $('#time').val();
+        // --- NEW: Grab the exact time right now (e.g., "14:12") ---
+        const now = new Date();
+        const exactTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         
-        // Append time and date to the payload
+        // Append exact time and date to the payload
         $.each(studentData, function(i, s) {
-            s.shortTime = time;
+            s.shortTime = exactTime;
             s.shortDate = date;
         });
 
+        // Instantly disable the button to prevent double-clicking
         $('#save').text('Saving...').prop('disabled', true);
 
         $.ajax({
@@ -185,8 +174,10 @@ $(document).ready(function() {
             type: 'POST',
             data: { data: studentData }
         }).done(function(response) {
-            $('#message').removeClass('d-none alert-danger').addClass('alert-success').html('Attendance saved successfully!');
-            $('#save').text('Save Attendance').prop('disabled', false);
+            $('#message').removeClass('d-none alert-danger').addClass('alert-success').html('Attendance saved successfully at ' + exactTime + '!');
+            $('#btnContainer').empty();
+            studentData = []; 
+            $('#save').text('Saved!'); 
         }).fail(function() {
             $('#message').removeClass('d-none alert-success').addClass('alert-danger').html('Error saving attendance.');
             $('#save').text('Save Attendance').prop('disabled', false);
