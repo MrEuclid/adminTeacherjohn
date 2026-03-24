@@ -1,7 +1,29 @@
 <?php 
+
 // require_once "../authCheckPIO.php";
 // restrictToAdmin();
 include "../connectDatabase.php" ; 
+
+
+// --- NEW CODE: Fetch the current classes ---
+// We use MAX(Year) to automatically grab the active school year (e.g., 2025/2026)
+$yearQuery = "SELECT MAX(Year) FROM New_ID_Year_Grade";
+$yearResult = mysqli_query($dbServer, $yearQuery);
+$yearData = mysqli_fetch_row($yearResult);
+$currentYear = $yearData[0];
+
+// Fetch all unique grades for the current school year, sorted alphabetically
+$gradeQuery = "SELECT DISTINCT Grade FROM New_ID_Year_Grade WHERE Year = '$currentYear' ORDER BY Grade ASC";
+$gradeResult = mysqli_query($dbServer, $gradeQuery);
+$activeGrades = [];
+
+while ($row = mysqli_fetch_assoc($gradeResult)) {
+    if (!empty($row['Grade'])) {
+        $activeGrades[] = $row['Grade'];
+    }
+}
+// -------------------------------------------
+
 $date = date('Y-m-d') ; // Changed to standard DB format
 ?>
 <!DOCTYPE html>
@@ -56,14 +78,16 @@ $date = date('Y-m-d') ; // Changed to standard DB format
             <small class="text-muted"><?php echo date('D, d M Y'); ?></small>
         </div>
         
-        <div class="col-md-2">
-            <label class="form-label fw-bold">Select Class</label>
-            <select class="form-select" id="selectGrade">
-                <option value="G7A">G7A</option>
-                <option value="G8A">G8A</option>
-                <option value="G9A">G9A</option>
-            </select>
-        </div>
+     <div class="col-md-2">
+    <label class="form-label fw-bold">Select Class</label>
+    <select class="form-select" id="selectGrade">
+        <?php foreach ($activeGrades as $grade): ?>
+            <option value="<?php echo htmlspecialchars($grade); ?>">
+                <?php echo htmlspecialchars($grade); ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+</div>
         
         <div class="col-md-2">
             <label class="form-label fw-bold">Time</label>
