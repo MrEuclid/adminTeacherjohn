@@ -65,8 +65,14 @@ $date = date('Y-m-d'); // Standard DB format
         }
     </style>
 </head>
-<body>
-
+<body>  
+    <div class="flex flex-col md:flex-row md:items-center md:ml-auto gap-2">
+                <span id="recordCount" class="text-sm text-gray-600 font-medium"></span>
+                <span id="copyFeedback" class="text-sm font-semibold transition duration-300 opacity-0"></span>
+                 <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">
+            GO BACK
+        </button>
+            </div>
 <div class="container py-4">
     <div class="row mb-4 align-items-end">
         <div class="col-md-4">
