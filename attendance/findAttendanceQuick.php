@@ -82,7 +82,7 @@ $date = date('d-M-Y') ;
                 Copy Filtered Records (CSV)
             </button>
 
-            <button id = "month" class="px-4 py-3 bg-blue-300 text-white font-semibold rounded-lg shadow-md hover:bg-blue-00 transition duration-150 whitespace-nowrap">  <a href = "attendanceReports.html" target = "_blank"> View Monthly Attendance </a></button>
+            <button id = "month" class="px-4 py-3 bg-blue-300 text-white font-semibold rounded-lg shadow-md hover:bg-blue-00 transition duration-150 whitespace-nowrap">  <a href = "pioMonthlyAttendanceReportNewv2.html"> View Monthly Attendance </a></button>
 
             <!-- Status and Feedback Container -->
             <div class="flex flex-col md:flex-row md:items-center md:ml-auto gap-2">
