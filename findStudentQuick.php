@@ -3,7 +3,7 @@ require_once "authCheckPIO.php";
 restrictToAdmin();
 // include "includes/connect_db_euclid_pio.php" ; 
 include "connectDatabase.php";
-include "includes/date_data.php" ;
+include "date_data.php" ;
 $date = date('d-M-Y') ;
 ?>
 <!DOCTYPE html>
