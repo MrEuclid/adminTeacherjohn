@@ -46,7 +46,7 @@ error_reporting(E_ALL);
     <div id="login">
         <div class="row">
             <div class="col-sm-12 c">
-                <h1>PIO High School Markbookv3
+                <h1>PIO High School Markbook
                     <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">GO BACK</button>
                 </h1>
                 <br><br>
@@ -182,7 +182,7 @@ error_reporting(E_ALL);
 
 <div id="myPage"></div>
 <br><br>
-<p class="c">The PIO HS Markbook - John Thompson 2022 email: john@teacherjohn.org</p>
+<p class="c">The PIO HS Markbook - John Thompson 2026 email: john@teacherjohn.org</p>
 
 <!-- AMALGAMATED JAVASCRIPT -->
 <script type="text/javascript">
