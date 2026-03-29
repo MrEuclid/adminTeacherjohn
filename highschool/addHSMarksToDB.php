@@ -57,7 +57,7 @@ h4 {text-align:center; font-size:14pt;
  //   alert('Status = ' + window.name) ;
 
     if (status != 'OK')
-      {window.location.replace("https://admin.pio-students.net/highschool/indexHighSchool.php");}
+      {window.location.replace("https://admin.teacherjohn.org/highschool/indexHighSchool.php");}
   
   
 })
