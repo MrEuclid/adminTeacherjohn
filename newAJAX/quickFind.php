@@ -14,22 +14,22 @@ gets main fields from the query
 
 $query = "SELECT 
     NS.ID AS Student_ID,
-    NS.Family_name,
-    NS.First_name,
+    CONCAT(NS.Khmer_family_name, ' ', NS.Khmer_first_name) AS Khmer_Name,
+    CONCAT(NS.Family_name, ' ', NS.First_name) AS English_Name,
+    
     NS.Gender,
     NS.Date_birth,
     
     TargetGrade.Grade AS Grade, 
     
-   cast(Counts.Total_Occurrences AS SIGNED) AS Years,
-   NS.Gone
+    Counts.Years
 FROM 
     New_Students NS
 
 
 JOIN 
     (
-        SELECT Student_ID, COUNT(*) as Total_Occurrences 
+        SELECT Student_ID, COUNT(*) as Years
         FROM New_ID_Year_Grade 
         GROUP BY Student_ID
     ) Counts ON NS.ID = Counts.Student_ID
@@ -42,7 +42,7 @@ LEFT JOIN
 
 
 WHERE TargetGrade.Grade IS NOT NULL  
-ORDER BY NS.ID DESC;" ;
+ORDER BY `Counts`.`Years` DESC;" ;
 $result = mysqli_query($dbServer,$query);
 
 $cnt = 0;
