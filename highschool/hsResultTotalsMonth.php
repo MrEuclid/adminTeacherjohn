@@ -77,11 +77,9 @@ GROUP BY New_Students.ID
 ORDER BY Grade,subjectID , concat(Khmer_Family_name,'-',Khmer_First_name)";
 
 $query = $query . $q ;
+// Include the file containing our new function
+include_once "../print_query_data_plain.php";
 
-// echo "<br>" . $query . "<br>" ;
-//$result = mysqli_query($dbServer,$query);
-
-//echo json_encode($output) ;
-include "../print_query_data_plain.php" ;
-//  include "makeJSONFromQuery.php" ;
+// Explicitly call the function and pass it the variables it needs
+renderDataTable($dbServer, $query);
 ?>
