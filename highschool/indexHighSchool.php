@@ -1,314 +1,304 @@
 <?php 
- require_once "../authCheckPIO.php";
- restrictToAdmin();
+require_once "../authCheckPIO.php";
+restrictToAdmin();
 include "../connectDatabase.php"; 
 include "../yearMonth.php";
 
-echo "Today is " . date('d-M-Y') .  "<br>";
-
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+
+// Ensure $y is defined (handling the academic year shift for Nov/Dec)
+$y = $year;
+if ($month > 9) {
+    $y = $year - 1;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>High School Marks home page</title>
-    <!-- <link rel="stylesheet" href="css/dentalStyles.css"> -->
+    <title>High School Marks Dashboard</title>
     <link href='https://fonts.googleapis.com/css?family=Khmer' rel='stylesheet' type='text/css'>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    <!-- Removed old jQuery 1.11.3 to prevent conflicts -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-
+    <!-- Modernized Bootstrap & DataTables CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    
     <style type="text/css">
-        h1 {text-align:center; font-size:24pt; color:blue; font-weight:bold;}
-        h2 {text-align:center; font-size:18pt; color:green; font-weight:bold;}
-        h3 {text-align:center; font-size:16pt; color:red; font-weight:bold;}
-        h4 {text-align:center; font-size:14pt; color:blue; font-weight:bold;}
-        .c {text-align: center; margin-left: auto;margin-right: auto;}
-        .l {text-align: left;}
-        .r {text-align: right;}
-        #errorMessage {background-color: yellow; color: red; text-align: center;}
+        body { background-color: #f8f9fa; font-family: Arial, 'Khmer', sans-serif; }
+        .dashboard-header { text-align:center; padding: 20px 0; color: #2c3e50; font-weight:bold; }
+        .control-panel { background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .info-panel { background: #e9ecef; padding: 15px; border-radius: 5px; margin-top: 20px; display: none; text-align: center;}
+        .info-panel h4 { margin: 0; color: #0056b3; font-weight: bold; }
+        .form-control { display: inline-block; width: auto; margin: 0 10px; }
+        .radio-inline { margin-right: 15px; font-size: 16px; }
+        #errorMessage { display: none; background-color: #ffeeba; color: #856404; padding: 10px; border-radius: 4px; text-align: center; margin-bottom: 15px; }
+        .pink { background-color: #ffb3b3; text-align: center; }
+        .highlight { background-color: #e6f2ff; }
+        input[type="text"].pink { width: 100%; border: 1px solid #ccc; border-radius: 4px; padding: 4px; }
     </style>   
 </head>
 
 <body>
 
-
 <div class="container">
-
-    <!-- LOGIN SECTION -->
-    <div id="login">
-        <div class="row">
-            <div class="col-sm-12 c">
-                <h1>PIO High School Markbook
-                    <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">GO BACK</button>
-                </h1>
-                <br><br>
-                <h3>Please log in</h3>
-                <label>Passwordv2<input type="password" id="pwdText"></label>
-                <button id="pwd">Log in 2</button>
-            </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <?php include "menu.html"; ?>
+            <h1 class="dashboard-header">PIO High School Markbook Dashboard</h1>
+            <p class="text-center text-muted"><strong>School Year: <?php echo ($year-1) . " / " . $year; ?></strong> | Today is <?php echo date('d-M-Y'); ?></p>
         </div>
     </div>
 
-    <!-- MAIN APP SECTION -->
-    <div id="everything">
-        <div class="row">
-            <div class="col-sm-12 c">
-                <?php 
-                include "menu.html"; 
+    <!-- MAIN CONTROL PANEL -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="control-panel">
+                <div id="errorMessage"></div>
+                
+                <h3 class="text-center" style="color:#27ae60; margin-bottom: 20px;">Select Test Parameters</h3>
+                
+                <!-- Test Type Selection -->
+                <div class="row" style="margin-bottom: 20px;">
+                    <div class="col-sm-12 text-center">
+                        <label class="radio-inline">
+                            <input type="radio" id="monthly" name="testType" value="month" checked> <strong>Monthly Test</strong>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="SEM1" name="testType" value="S1"> <strong>Semester 1</strong>
+                        </label>
+                        <label class="radio-inline">
+                            <input type="radio" id="SEM2" name="testType" value="S2"> <strong>Semester 2</strong>
+                        </label>
+                    </div>
+                </div>
 
-                // get list of all subjects
-                $querySubjects = "SELECT code,english,khmer FROM hsSubjects ORDER BY code";
-                $resultSubjects = mysqli_query($dbServer,$querySubjects);
+                <hr>
 
-                // get classes ordered 
-                $queryClasses  = "SELECT DISTINCT Grade FROM New_ID_Year_Grade WHERE School = 'PIOHS' AND Year = '$year' ORDER BY CAST(substr(Grade,2,2) AS UNSIGNED)";
-                $resultClasses = mysqli_query($dbServer,$queryClasses);
+                <!-- Month, Subject, Class Selection -->
+                <div class="row text-center">
+                    <form id="markSelectionForm" onsubmit="return false;">
+                        
+                        <?php
+                            // Generate Month Array
+                            $monthArray = [];
+                            $oldYear = $year - 1;
+                            $query = "SELECT distinct testID FROM hsMarks WHERE testID > concat('".$oldYear."','-09') ORDER BY id DESC";
+                            $result = mysqli_query($dbServer,$query);
+                            while ($data = mysqli_fetch_row($result)) {
+                                $monthArray[] = $data[0];
+                            }
+                            $now = date('Y-m');
+                            array_push($monthArray, $now);
+                            $monthArray = array_unique($monthArray);
+                            
+                            // Get Subjects
+                            $querySubjects = "SELECT code, english, khmer FROM hsSubjects ORDER BY code";
+                            $resultSubjects = mysqli_query($dbServer, $querySubjects);
 
-              //  $queryTests  = "SELECT * from hsTestCodes ORDER BY id";
-              //  $resultTests = mysqli_query($dbServer,$queryTests);
+                            // Get Classes
+                            $queryClasses  = "SELECT DISTINCT Grade FROM New_ID_Year_Grade WHERE School = 'PIOHS' AND Year = '$year' ORDER BY CAST(substr(Grade,2,2) AS UNSIGNED)";
+                            $resultClasses = mysqli_query($dbServer, $queryClasses);
+                        ?>
 
-                // array of months including the present month
-                $monthArray = [];
-                for ($m = 1; $m <= $month; $m++) {
-                    $fullMonth = ($m < 10) ? '0' . $m : $m;
-                    if ($m > 9) {
-                        $monthArray[$m] = $y . "-" . $fullMonth;
-                    } else { 
-                        $monthArray[$m] = $year . "-" . $fullMonth;
-                    }
-                }
+                        <div class="form-group" style="display:inline-block;">
+                            <label for="yearMonth">Month: </label>
+                            <select id="yearMonth" name="yearMonth" class="form-control">
+                                <option value="">Select Month</option>
+                                <?php foreach($monthArray as $m): ?>
+                                    <option value="<?php echo $m; ?>"><?php echo $m; ?></option>  
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
 
-                $monthArray = [];
-                $oldYear = $year - 1;
-                $oldDate = $oldYear . "-09";
+                        <div class="form-group" style="display:inline-block;">
+                            <label for="subject">Subject: </label>
+                            <select id="subject" name="subject" class="form-control">
+                                <option value="">Select Subject</option>
+                                <?php while ($data = mysqli_fetch_assoc($resultSubjects)): ?>
+                                    <option value="<?php echo $data['code']; ?>">
+                                        <?php echo $data['english'] . " " . $data['khmer'] . " (" . $data['code'] . ")"; ?>
+                                    </option>  
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
 
-                $query = "SELECT distinct testID FROM hsMarks WHERE testID > concat(".$oldYear.",'-09') ORDER BY id DESC";
-                $result = mysqli_query($dbServer,$query);
-                $i = 0;
-                while ($data = mysqli_fetch_row($result)) {
-                    $monthArray[$i] = $data[0];
-                    $i++;
-                }
+                        <div class="form-group" style="display:inline-block;">
+                            <label for="grade">Class: </label>
+                            <select id="grade" name="grade" class="form-control">
+                                <option value="">Select Class</option>
+                                <?php while ($data = mysqli_fetch_assoc($resultClasses)): ?>
+                                    <option value="<?php echo $data['Grade']; ?>"><?php echo $data['Grade']; ?></option>  
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
 
-                if ($m < 9) {
-                    $thisMonth = $year . "-" . $fullMonth;
-                    array_push($monthArray, $thisMonth);
-                }
+                        <div class="form-group" style="display:inline-block; vertical-align: bottom;">
+                            <button id="fetchDataBtn" class="btn btn-primary" style="margin-left: 15px;">Load Markbook</button>
+                        </div>
+                    </form>
+                </div>
 
-                if ($m > 9) {
-                    array_push($monthArray, ($year-1) . "-10");
-                    array_push($monthArray, ($year-1) . "-11");
-                    array_push($monthArray, ($year-1) . "-12");
-                }
+                <!-- Info Panel for Subject/Level/Maxima -->
+                <div id="subjectInfoPanel" class="info-panel">
+                    <h4>
+                        <span id="displaySubject"></span> | 
+                        Class: <span id="displayGrade"></span> | 
+                        Test: <span id="displayTestID"></span> | 
+                        Level: <span id="displayLevel"></span> | 
+                        Max Mark: <span id="displayMaxima" class="text-danger"></span>
+                    </h4>
+                </div>
 
-                // add this month 
-                $now = date('Y-m');
-                array_push($monthArray,$now);
-                $monthArray = array_unique($monthArray);
-                ?>
-            </div>
+            </div> <!-- /control-panel -->
         </div>
-        
-        <p id="errorMessage"></p>
-        
-        <div id="selectOptions">
-            <br><br>
-            <h2>Type of test</h2>
-            <div class="row">
-                <div class="col-sm-12 c">
-                    <input type="radio" id="monthly" name="testType" value="month" checked="TRUE"> Monthly or 
-                    <input type="radio" id="SEM1" name="testType" value="S1"> Semester 1
-                    <input type="radio" id="SEM2" name="testType" value="S2"> Semester 2<br><br>
-                    <input type="text" id="testID" readonly="TRUE">         
-                </div>
-            </div>
+    </div>
 
-            <br>
-            <h2>Month, Class & Subject</h2>
+    <!-- WORKSPACE AREA (Where Add/Edit form loads) -->
+    <div id="workspaceArea"></div>
 
-            <div class="row">
-                <div class="col-sm-3 c">
-                    <label>Month</label>
-                    <select id="yearMonth" name="yearMonth">
-                        <option value="" selected="selected">Month</option>
-                        <?php foreach($monthArray as $m) { ?>
-                            <option value="<?php echo $m; ?>"><?php echo $m; ?></option>  
-                        <?php } ?>
-                    </select> 
-                </div>
-                
-                <div class="col-sm-5 c">
-                    <label>Subject</label>
-                    <select id="subject" name="subject">
-                        <option value="" selected="selected">Subject</option>
-                        <?php while ($data = mysqli_fetch_Assoc($resultSubjects)) { 
-                            $code = $data["code"];
-                            $message = $data["english"] . " " . $data["khmer"] . "  " . $data["code"];
-                        ?>
-                            <option value="<?php echo $code; ?>"><?php echo $message; ?></option>  
-                        <?php } ?>
-                    </select> 
-                </div>
-                
-                <div class="col-sm-2 c">
-                    <label>Class</label>
-                    <select id="grade" name="grade">
-                        <option value="" selected="selected">Class</option>
-                        <?php while ($data = mysqli_fetch_Assoc($resultClasses)) { 
-                            $class = $data["Grade"];
-                            $message = $data["Grade"] . " " . $date["Year"] . " " . $data["School"];
-                        ?>
-                            <option value="<?php echo $class; ?>"><?php echo $message; ?></option>  
-                        <?php } ?>
-                    </select> 
-                </div>
-                
-                <div class="col-sm-2 c">
-                    <button id="sendData">Add marks</button>
-                </div>
-            </div>
-        </div> <!-- /selectOptions -->
-    </div> <!-- /everything -->
+</div> <!-- /container -->
 
-</div> <!-- /bootstrap container -->
+<!-- Scripts -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 
-<div id="myPage"></div>
-<br><br>
-<p class="c">The PIO HS Markbook - John Thompson 2026 email: john@teacherjohn.org</p>
-
-<!-- AMALGAMATED JAVASCRIPT -->
-<script type="text/javascript">
+<script>
 $(document).ready(function() {
-
-    console.log("Hello! The jQuery block has successfully started!");
-  $('#everything').hide();
-     $('#selectOptions').show();
-    // --- 1. On Load Setup ---
-
-     
-    var year = '<?php echo $year; ?>';
-    var month = '<?php echo $month; ?>';
-    var y = year;
-    if (month > 9) { y = parseInt(year - 1); }
-    var yearMonth = y + '-' + month;
-    $('#testID').val(yearMonth);
-    alert(y + ' ' + yearMonth);
-
-    // INTENTIONALLY COMMENTED OUT HIDING LOGIC SO YOU CAN SEE EVERYTHING
-    // $('#upload').hide();
-    // window.name = "OK"; 
-    // var status = window.name;
-    // if (status != 'OK') { $("#everything").hide(); $('#login').show(); }
-     if (status == 'OK') { $("#everything").show(); $('#login').hide(); }
-
-    $('#pwdText').focus(); // Put cursor in password box
-
-    // --- 2. Button Handlers ---
-
-    // Password Login Button
-
-
-    $('#pwd').on('click', function(e) {
-        e.preventDefault(); 
-        alert(this.id);
-        if ($('#pwdText').val() != 'abc') {
-            // Re-enabling the hide/show here so the button still functionally tests correctly
-            $('#everything').show();
-            $('#login').hide();
-            window.name = "OK"; 
+    
+    // Handle Radio Button Logic to override the month dropdown for Semesters
+    $('input[type=radio][name=testType]').change(function() {
+        if (this.value == 'month') {
+            $('#yearMonth').prop('disabled', false);
         } else {
-            alert("The password is incorrect"); 
-            $('#pwdStatus').val('N'); 
-            $('#pwdText').val('');
-            $('#pwdText').focus(); 
+            // If Semester is selected, disable the month dropdown 
+            // The backend router will build the S1/S2 test ID automatically
+            $('#yearMonth').val('');
+            $('#yearMonth').prop('disabled', true);
         }
     });
 
-    // Logout Button
-    $('#logout').on('click', function() {
-        window.name = '';
-        $('#pwdText').val(''); // Fixed missing #
-        $('#login').show();
-        $('#selectOptions').show();
-    });
-
-    // Semester Radio Buttons
-    $('[id^=SEM]').on('click', function() {
-        alert("Checked " + this.id);
-        // $('#yearMonth').hide(); // Commented out to keep visible
-        yearMonth = year + '-' + this.id;
-        console.log(yearMonth, yearMonth.substring(5,8));
-        $('#testID').val(yearMonth);
-    });
-
-    // Monthly Radio Button
-    $('#monthly').on('click', function() {
-        alert("Checked " + this.id);
-        // $('#yearMonth').show(); // Commented out
-        yearMonth = year + '-' + month;
-        console.log(yearMonth);
-        $('#testID').val(yearMonth);
-    });
-
-    // "Add" Button
-    $('#add').on('click', function() {
-        // $('#selectOptions').show(); // Commented out
-    });
-
-    // Send Data (Add Marks) Button
-    $('#sendData').on('click', function() {
+    // Main Fetch Button Click
+    $('#fetchDataBtn').on('click', function() {
         var testType = $("input[name='testType']:checked").val();
-        var subject = $('#subject option:selected').val();
-        var grade = $('#grade option:selected').val();
-        var currentYearMonth = $('#testID').val(); // Storing locally to avoid overwriting global
+        var subject = $('#subject').val();
+        var grade = $('#grade').val();
+        var yearMonth = $('#yearMonth').val();
 
-        alert(currentYearMonth);
-        if (currentYearMonth.substring(5,8) != "SEM") {
-            currentYearMonth = $('#yearMonth option:selected').val();
-        }
+        // Validation
+        if (!subject) { alert("Please select a subject."); return; }
+        if (!grade) { alert("Please select a class."); return; }
+        if (testType === 'month' && !yearMonth) { alert("Please select a month for the monthly test."); return; }
 
-        alert("Checking form " + subject + ' ' + grade + ' = ' + currentYearMonth);
+        $('#errorMessage').hide();
+        $('#workspaceArea').html('<h3 class="text-center text-muted">Loading data...</h3>');
 
-        if (subject == "") { alert("You need a subject"); return; }  
-        if (grade == "") { alert("You need a class"); return; }
-        if (currentYearMonth == "") { alert("You need the month"); return; }
-
+        // Call our new backend router script
         $.ajax({
-            dataType: 'text',
-            type: 'get',
-            url: 'addMarks.php',
-            data: {subject: subject, grade: grade, yearMonth: currentYearMonth, testType: testType},
+            dataType: 'json',
+            type: 'POST',
+            url: 'routeMarksRequest.php',
+            data: { subject: subject, grade: grade, yearMonth: yearMonth, testType: testType },
             success: function(response) {
-                var i = response.indexOf('!');
-                console.log(i, response[8], response[8] == '!');  
-                
-                // $('#selectOptions').hide(); // Commented out
-                if (response[8] == '!') {
-                    $('#errorMessage').html(response);
-                    alert("edit error");
-                    // $('#sendData').hide(); // Commented out
-                    // $('#sendDataLabel').hide(); // Commented out
+                if (response.status === 'error') {
+                    $('#errorMessage').text(response.message).show();
+                    $('#workspaceArea').empty();
+                    $('#subjectInfoPanel').hide();
                 } else {
-                    // $('.wrapper').hide(); // Commented out
-                    $('#myPage').html(response); 
-                    // $('#sendData').show(); // Commented out
-                    // $('#sendDataLabel').show(); // Commented out
-                }  
+                    // Update the Info Panel
+                    $('#displaySubject').text(response.subjectName);
+                    $('#displayGrade').text(grade);
+                    $('#displayTestID').text(response.testID);
+                    $('#displayLevel').text(response.level);
+                    $('#displayMaxima').text(response.maxima);
+                    $('#subjectInfoPanel').fadeIn();
+
+                    // Load the returned HTML form into the workspace
+                    $('#workspaceArea').html(response.html);
+                }
             },
-            error: function(xhr, textStatus, errorThrown) {
-                alert('request failed');
+            error: function() {
+                alert('A network error occurred while fetching the data.');
+                $('#workspaceArea').empty();
             }
         });
     });
 });
+
+// Validation function attached to the dynamically loaded input fields
+// Validation function attached to the dynamically loaded input fields
+// Validation function attached to the dynamically loaded input fields
+function overLimit(data, id, max) {
+    var n = parseFloat(data);
+    var min = -0.01;
+    var error = false;
+    var errorMsg = "";
+    
+    var $input = $('#' + id);
+
+    // 1. Reset styles and remove the error-tracking class
+    $input.css({"background-color": "white", "color": "black"}).removeClass('invalid-mark');
+
+    // 2. Run checks (Only if the cell is NOT blank. Blank means absent.)
+    if (data.trim() !== '') {
+        if (isNaN(data)) {
+            error = true;
+            errorMsg = "Please enter a valid number.";
+        } else if (n > parseFloat(max)) {
+            error = true;
+            errorMsg = "A mark entered (" + n + ") is greater than the maximum allowed (" + max + ").";
+        } else if (n < min) {
+            error = true;
+            errorMsg = "A mark cannot be negative.";
+        }
+    }
+
+    // 3. Apply UI feedback
+    if (error) {
+        // Turn the box red and ADD the tracking class
+        $input.css({"background-color": "red", "color": "yellow"}).addClass('invalid-mark');
+        
+        // Make the error banner sticky so it follows you down the page
+        $('#errorMessage').css({
+            "position": "sticky", 
+            "top": "20px", 
+            "z-index": "9999",
+            "box-shadow": "0px 4px 10px rgba(0,0,0,0.2)"
+        }).text(errorMsg).slideDown();
+        
+    } else {
+        // Turn the box green if it has a valid number (leave white if blank)
+        if (data.trim() !== '') {
+            $input.css({"background-color": "green", "color": "white", "text-align": "center"});
+        }
+    }
+
+    // 4. Check if we need to lock or unlock the Submit button
+    toggleSubmitButton();
+}
+
+// Helper function to lock/unlock the form
+function toggleSubmitButton() {
+    // Find the submit button inside our dynamic form
+    var $submitBtn = $('#marksForm button[type="submit"]');
+    
+    // Count how many input boxes currently have the 'invalid-mark' class
+    var errorCount = $('.invalid-mark').length;
+
+    if (errorCount > 0) {
+        // If there is even one error, lock the button and change its appearance
+        $submitBtn.prop('disabled', true).css("opacity", "0.5").text("Fix red marks to save");
+    } else {
+        // If all errors are fixed, unlock the button and hide the error banner
+        $submitBtn.prop('disabled', false).css("opacity", "1");
+        
+        // Restore the original text based on whether we are adding or editing
+        var isEditMode = $submitBtn.hasClass('btn-warning');
+        $submitBtn.text(isEditMode ? 'Update Marks' : 'Save New Marks');
+        
+        $('#errorMessage').slideUp();
+    }
+}
 </script>
 </body>
 </html>

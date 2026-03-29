@@ -16,8 +16,8 @@ $testID = $yearMonth;
 
 // check that the class doesn't already have marks for that month
 $month = date("m") ;
-// echo "<br><strong>School year " . ($year-1) . " / " .$year . "</strong>";
-// echo $year . "-" . $month ;
+ echo "<br><strong>School year " . ($year-1) . " / " .$year . "</strong>";
+echo $year . "-" . $month ;
 //if ($month == "10" OR $month == "11" OR $month == "12") {$year = $year + 1 ;} else {$year = $year ;}
 
 include "../yearMonth.php" ;
@@ -27,12 +27,12 @@ WHERE subjectID = '$subject'
 AND testID = '$yearMonth'
 AND studentiD IN (SELECT Student_ID FROM New_ID_Year_Grade WHERE Year = '$year' AND Grade = '$grade')" ;
 
-// echo "<br>" . $query . "<br>" ;
+ echo "<br> counting" . $query . "<br>" ;
 
 $result = mysqli_query($dbServer,$query);
 $n = mysqli_num_rows($result);
 
-// echo $n  . "<br>" ;
+ echo "rows = " . $n  . "<br>" ;
 if ($n <  0) 
   {
     $m =  "Error! " .$grade . "-" . $subject . " already has marks for " . $yearMonth . ".<br>Please use <b> Edit marks </b> if you want to change a student's mark. <br>";
@@ -101,28 +101,6 @@ AND substr(testID,4,2) NOT IN ('S1', 'S2') ORDER BY testID DESC limit 1 ";
 // echo "<br>" . $query . "<br>" ;
 
 
-$testID = $yearMonth ;
-/*
-$result = mysqli_query($dbServer,$query) ;
-$data = mysqli_fetch_row($result);
-//print_r($data);
-$testNumberMax = $data[0] ; 
-
-//echo "<br>" . $testNumberMax . " Last test number<br>" ;
-
-$lastDigit = substr($testNumberMax,4,2);
-//echo "Last digit = " . $lastDigit;
-
-$newDigit = $lastDigit + 1 ;
-
-// get next test number
-
-if ($lastDigit > 8) {$d = "error " ;echo $d;}
-else {
-$newTestNumber  = ($year -2000) . '-0' . $newDigit; 
-//echo "<br>" . $newTestNumber . " new test number<br>" ;
-}
-*/
 
 $newTestNumber = $testID;
 } // month
