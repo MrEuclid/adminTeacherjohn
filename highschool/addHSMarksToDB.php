@@ -5,24 +5,19 @@
 
     <title>High School Marks Dashboard</title>
  
-
- 
   <link href='https://fonts.googleapis.com/css?family=Khmer' rel='stylesheet' type='text/css'>
     
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     
- 
- 
     <script type="text/javascript" src="http://www.google.com/jsapi"></script>
 	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script type="text/javascript">
       google.load('visualization', '1.1', {packages: ['controls']});
     </script>
-
 
 <style type="text/css">
 h1 {text-align:center; font-size:24pt;
@@ -46,23 +41,7 @@ h4 {text-align:center; font-size:14pt;
 
 .r {text-align: right;}
 
-
   </style>     
-
-  <script type="text/javascript">
-  
-  $( document ).ready(function() {
-
-    var status = window.name ;
- //   alert('Status = ' + window.name) ;
-
-    if (status != 'OK')
-      {window.location.replace("https://admin.teacherjohn.org/highschool/indexHighSchool.php");}
-  
-  
-})
-   
-</script>  
 
   </head>
 <body>
@@ -92,7 +71,6 @@ $dns = 0;
 $sum = 0 ;
 
 // gwt subject maximum
-
 
 echo "<h2>Processing " . $l ." marks for " . $subject . " Test number  ". $testNumber  . "</h2>" ;
 
@@ -190,5 +168,3 @@ The average is <?php echo round($sum/$cnt,0) . "%<br>" ; ?>
 </div></div>
 </body>  
 </html>
-
-
