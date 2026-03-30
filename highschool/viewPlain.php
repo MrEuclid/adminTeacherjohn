@@ -70,7 +70,8 @@
 <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">GO BACK</button>
 <div class="container">
     <div class="row">
-        <div class="col-sm-12">
+        <div class="col-sm-12  text-center">
+             <?php include "menu.html"; ?>
             <h1 class="header-title">PIO High School Markbook - View Data</h1>
         </div>
     </div>
