@@ -1,6 +1,6 @@
 <?php
 include "../connectDatabase.php";
-
+include "../date_data.php";
 // Get distinct yearMonth from the last 12 months
 // We use DATE_SUB to limit the scan, and LEFT() which is slightly faster than substr()
 $query = "SELECT DISTINCT LEFT(shortDate, 7) AS yearMonth 

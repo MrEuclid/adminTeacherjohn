@@ -1,7 +1,7 @@
 
 <?php
 include "../connectDatabase.php" ;
-
+include "../date_data.php" ;
 
 
 $query = "SELECT max(Year) FROM New_ID_Year_Grade";

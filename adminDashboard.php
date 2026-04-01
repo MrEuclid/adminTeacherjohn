@@ -7,8 +7,7 @@ error_reporting(E_ALL);
 require_once "authCheckPIO.php";
 // require_once "authConf.php";
 restrictToAdmin();
-
-include "connectDatabase.php";
+include "connectDatabase" ; 
 include "date_data.php" ;
 $date = date('d-M-Y') ;
 ?>
@@ -133,7 +132,7 @@ table { margin: auto; width: 100% !important; }
 
       <div class = "row">
         <div class = "col-">
-<div class = "h1 text-center text-primary" >Admin - Teacher John - Dashboard
+<div class = "h1 text-center text-primary" >Admin - PIO - Dashboard
 <a href="logout.php" class="btn btn-outline-danger btn-sm">Sign Out</a>
 </div>
 </div></div>
@@ -143,7 +142,6 @@ table { margin: auto; width: 100% !important; }
 
 <a href = "inviteUserPIO.php"><button class = "btn btn-danger" id = "newUser" data-tooltip= "Add an admin or data entry user,">Invite user</button></a>
 <a href = "new-student.php"><button class = "btn btn-danger" id = "newStudent" data-tooltip = "Enrol a new student or edit student records">Add / Edit students</button></a>
-
 </div></div>  
 
 
@@ -154,7 +152,7 @@ table { margin: auto; width: 100% !important; }
     </label>
 
    
-   <a href = "findStudentQuick.php">
+   <a href = " https://admin.pio-students.net/findStudentQuick.php">
     <button class = "btn btn-primary mb-2"  id = "quickFind" data-tooltip = "Quick search using student ID" >Quick find</button></a>
 
 <a href = "attendance/indexAttendance.php" ><button class = "btn btn-warning mb-2"  id = "recordAttendnace" data-tooltip  = "Mark attendance each day.">Record attendance</button></a>
@@ -165,22 +163,11 @@ table { margin: auto; width: 100% !important; }
    <a href = "/attendance/findAttendanceAll.php">
       <button class = "btn btn-primary mb-2"  id = "quickAttendanceSearch" data-tooltip  = "Check the attendance for a student">Attendance Search</button></a>
 
-
-
-        <a href = "attendance/pioMonthlyAttendanceReportNewv2.html">
-      <button class = "btn btn-info mb-2"  id = "monthlyAttendance" data-tooltip  = "See attendance for each class, each month"> Attendance monthly</button> </a>
-
-</div></div>
-
-<div class = "row justify-content-center">
-        <div class = "col-12  text-center">
-
        <a href = "/highschool/findMarksQuickVisual.php" >
       <button class = "btn btn-primary mb-2"  id = "quickHSAll" data-tooltip  = "High school marks.">HS All</button></a>
 
      <a href = "/highschool/findMarksAllVisual.php">
       <button class = "btn btn-primary mb-2"  id = "quickHSone" data-tooltip  = "Check results for one high school student.">HS One student</button></a>
-
 
         <a href = "findPSQuick.php">
       <button class = "btn btn-primary mb-2"  id = "quickps" data-tooltip  = "Check results for primary school student.">PS - Lists</a>
@@ -191,6 +178,8 @@ table { margin: auto; width: 100% !important; }
 
 <div class = "row justify-content-center">
         <div class = "col-12  text-center">
+          <a href = "enrolmentsReport.php"><button class = "btn btn-warning" id = "enrolmentReport" data-tooltip = "Enrolment report.">Enrolment report</button></a>
+
    <a href = "https://admin.pio-students.net/newAJAX/moveOneStudentv2.php">
       <button class = "btn btn-warning mb-2"  id = "move1" >Move one student</button></a>
         <a href = "https://admin.pio-students.net/newAJAX/moveClassv2.php">
@@ -217,7 +206,8 @@ table { margin: auto; width: 100% !important; }
       <a href = "https://admin.pio-students.net/dashboardPIOSummary.php" target = "_blank">
      <button class = "btn btn-primary"  id = "primary"> Dashboard</button> </a>
 -->
-
+  <a href = "attendance/attendanceReports.php">
+      <button class = "btn btn-info mb-2"  id = "attendance" data-tooltip  = "See attendance for each class, each month"> Attendance</button> </a>
           <a href = "highschool/indexHighSchool.php">
       <button class = "btn btn-info mb-2" id = "hsMarks" data-tooltip  = "Add high school marks and view results.">High School marks</button></a>
     
