@@ -180,10 +180,10 @@ table { margin: auto; width: 100% !important; }
 
 
         <a href = "findPSQuick.php">
-      <button class = "btn btn-primary mb-2"  id = "quickps" data-tooltip  = "Check results for primary school student.">PS - Lists</a>
+      <button class = "btn btn-primary mb-2"  id = "quickps" data-tooltip  = "Check results for primary school student.">PS Mark List</button></a>
 
            <a href = "/highschool/findIncompleteData.php">
-      <button class = "btn btn-primary mb-2"  id = "missingMarks" data-tooltip  = "Find out which high school marks are missing from the database." >HS Missing marks</button></a>
+      <button class = "btn btn-primary mb-2"  id = "missingMarks" data-tooltip  = "Find out which high school marks are missing from the database." >HS Missing</button></a>
 </div></div>
 
 <div class = "row justify-content-center">
@@ -262,6 +262,7 @@ table { margin: auto; width: 100% !important; }
 
  
 </div></div>
+
 
 
 <div id = "topics">

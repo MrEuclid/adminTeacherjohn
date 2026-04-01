@@ -42,6 +42,9 @@ if ($month > 9) {
 <body>
 
 <div class="container">
+      <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">
+            GO BACK
+        </button>
     <div class="row">
         <div class="col-sm-12">
             <?php include "menu.html"; ?>

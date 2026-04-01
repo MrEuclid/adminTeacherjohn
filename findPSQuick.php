@@ -1,8 +1,8 @@
 <?php 
 require_once "authCheckPIO.php";
 restrictToAdmin();
-include "includes/connect_db_euclid_pio.php" ; 
-include "includes/date_data.php" ;
+include "connectDatabase.php" ; 
+include "date_data.php" ;
 $date = date('d-M-Y') ;
 ?>
 <!DOCTYPE html>
@@ -64,7 +64,7 @@ $date = date('d-M-Y') ;
 
     <div class="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
         <h1 class="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-2">
-            Find students
+            Find Primary School Marks
         </h1>
 
         <!-- Controls: Search, Button, and Status -->
@@ -217,11 +217,11 @@ $date = date('d-M-Y') ;
          * Formats values (e.g., currency).
          * @param {any} value 
          */
+        /**
+         * Formats values (e.g., currency).
+         * @param {any} value 
+         */
         function formatValue(value) {
-            if (typeof value === 'number' && (value >= 1000 || value <= -1000)) {
-                // Simple currency/large number formatting
-                return `$${value.toLocaleString()}`;
-            }
             return value;
         }
 
