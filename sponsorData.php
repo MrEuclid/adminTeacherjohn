@@ -123,61 +123,48 @@ while($row = mysqli_fetch_assoc($rSch)) {
 }
 
 // =========================================================
-// 4. RETENTION
+// 4. RETENTION (Fail-Safe Year-Over-Year Calculation)
 // =========================================================
-$qHist = "SELECT Student_ID, Year, School, Grade 
-          FROM New_ID_Year_Grade 
-          WHERE Year >= 2010 
-          ORDER BY Student_ID ASC, Year ASC";
-$rHist = mysqli_query($dbServer, $qHist);
+// We use a single query with a LEFT JOIN to calculate retention for ALL years at once.
+// It matches students in Year X with Year X+1. 
+// It safely ignores Grade 12 students and avoids calculating retention for the current year.
 
-$currentID = null;
-$studentHistory = []; 
-$cohortCounts = [];
+$queryRetention = "
+    SELECT 
+        t1.Year AS Start_Year,
+        t1.School,
+        COUNT(DISTINCT t1.Student_ID) AS Total_Started,
+        COUNT(DISTINCT t2.Student_ID) AS Total_Returned
+    FROM New_ID_Year_Grade t1
+    LEFT JOIN New_ID_Year_Grade t2 
+        ON t1.Student_ID = t2.Student_ID 
+        AND t2.Year = (t1.Year + 1)
+    WHERE t1.Grade NOT LIKE 'G12%' 
+      AND t1.Grade != '12'
+      AND t1.Year < $latestDataYear 
+    GROUP BY t1.Year, t1.School
+";
 
-if ($rHist) {
-    while($row = mysqli_fetch_assoc($rHist)) {
-        $id = $row['Student_ID'];
-        if ($id !== $currentID) {
-            if (!empty($studentHistory)) processRetention($studentHistory, $cohortCounts, $latestDataYear, $response['schools_found'], $genderMap);
-            $currentID = $id;
-            $studentHistory = [];
-        }
-        $studentHistory[] = $row;
-    }
-    if (!empty($studentHistory)) processRetention($studentHistory, $cohortCounts, $latestDataYear, $response['schools_found'], $genderMap);
-}
+$resultRetention = mysqli_query($dbServer, $queryRetention);
 
-function processRetention($history, &$cohorts, $latestYear, $validSchools, $bioMap) {
-    $first = $history[0];
-    $last = end($history);
-    $sid = $first['Student_ID'];
-    
-    $startSchool = strtoupper(trim($first['School']));
-    if (!in_array($startSchool, $validSchools)) return;
-    
-    $startYear = intval($first['Year']);
-    $lastYear = intval($last['Year']);
-    $lastGrade = strtoupper(trim($last['Grade']));
-    
-    $isGone = ($bioMap[$sid]['gone'] ?? 'N') === 'Y';
-    $isActive = ($lastYear == $latestYear) && !$isGone;
-    $isGrad = in_array($lastGrade, ['12', 'G12', 'GRADE 12']);
-    $isSurvivor = $isActive || $isGrad;
-    
-    if (!isset($cohorts[$startYear][$startSchool])) $cohorts[$startYear][$startSchool] = ['Total' => 0, 'Survivors' => 0];
-    $cohorts[$startYear][$startSchool]['Total']++;
-    if ($isSurvivor) $cohorts[$startYear][$startSchool]['Survivors']++;
-}
-
-foreach($cohortCounts as $yr => $schools) {
-    foreach($schools as $sch => $counts) {
-        if ($counts['Total'] > 0) {
-            $response['retention'][$yr][$sch] = round(($counts['Survivors'] / $counts['Total']) * 100, 1);
-        }
+if ($resultRetention) {
+    while ($row = mysqli_fetch_assoc($resultRetention)) {
+        $retentionYear = intval($row['Start_Year']);
+        $school = strtoupper(trim($row['School']));
+        $started = intval($row['Total_Started']);
+        $returned = intval($row['Total_Returned']);
+        
+        // Calculate percentage safely
+        $retentionRate = ($started > 0) ? round(($returned / $started) * 100, 1) : 0;
+        
+        // Store in JSON response array
+        $response['retention'][$retentionYear][$school] = $retentionRate;
     }
 }
+
+// Sort the years chronologically just in case the SQL returns them out of order
 ksort($response['retention']);
+
 
 // =========================================================
 // 5. ATTENDANCE
