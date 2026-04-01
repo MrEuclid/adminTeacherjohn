@@ -1,105 +1,106 @@
-<?php 
-// require_once "../authCheckPIO.php";
-// restrictToAdmin();
-include "../connectDatabase.php"; 
+<?php
+// Include your database connection
+include "../connectDatabase.php";
 
-// --- Fetch the current classes ---
-$yearQuery = "SELECT MAX(Year) FROM New_ID_Year_Grade";
-$yearResult = mysqli_query($dbServer, $yearQuery);
-$yearData = mysqli_fetch_row($yearResult);
-$currentYear = $yearData[0];
+// Set the current date (used by the JavaScript)
+$date = date('Y-m-d');
 
+// --- NEW: Fetch Dynamic Grades ---
+// Set the current year based on your system's needs (e.g., date('Y') or a specific academic year string)
+$currentYear = date('Y'); 
+
+// Fetch all unique grades for the current school year, sorted alphabetically
 $gradeQuery = "SELECT DISTINCT Grade FROM New_ID_Year_Grade WHERE Year = '$currentYear' ORDER BY Grade ASC";
 $gradeResult = mysqli_query($dbServer, $gradeQuery);
 $activeGrades = [];
 
-while ($row = mysqli_fetch_assoc($gradeResult)) {
-    if (!empty($row['Grade'])) {
+if ($gradeResult) {
+    while ($row = mysqli_fetch_assoc($gradeResult)) {
         $activeGrades[] = $row['Grade'];
     }
 }
-// -------------------------------------------
-
-$date = date('Y-m-d'); // Standard DB format
+// ---------------------------------
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Mark Roll</title>
-    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Attendance</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href='https://fonts.googleapis.com/css?family=Khmer' rel='stylesheet' type='text/css'>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
     <style>
-        body { background-color: #f8f9fa; font-family: 'Khmer', sans-serif; }
-        .attendance-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
+        /* Custom styles for the attendance buttons */
         .student-btn {
             height: 100px;
-            font-size: 1.1em;
-            font-weight: bold;
-            border-radius: 12px;
-            transition: transform 0.1s, box-shadow 0.1s;
+            margin-bottom: 10px;
             border: 2px solid transparent;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
         }
-        .student-btn:active { transform: scale(0.95); }
         
-        /* State Colors */
-        .state-N { background-color: #f8d7da; color: #842029; border-color: #f5c2c7; } /* Red/Absent */
-        .state-Y { background-color: #d1e7dd; color: #0f5132; border-color: #badbcc; } /* Green/Present */
-        .state-P { background-color: #cfe2ff; color: #084298; border-color: #b6d4fe; } /* Blue/Permission */
-        .state-L { background-color: #fff3cd; color: #664d03; border-color: #ffecb5; } /* Yellow/Late */
+        .student-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.2);
+        }
+
+        /* Status Colors */
+        .state-Y { background-color: #28a745; color: white; border-color: #1e7e34; } /* Present - Green */
+        .state-N { background-color: #dc3545; color: white; border-color: #bd2130; } /* Absent - Red */
+        .state-P { background-color: #ffc107; color: black; border-color: #d39e00; } /* Permission - Yellow */
+        .state-L { background-color: #17a2b8; color: white; border-color: #117a8b; } /* Late - Blue */
         
         .status-badge {
-            display: block;
-            font-size: 0.8em;
-            opacity: 0.8;
+            font-size: 0.9rem;
+            opacity: 0.9;
             margin-top: 5px;
         }
     </style>
 </head>
-<body>  
-    <div class="flex flex-col md:flex-row md:items-center md:ml-auto gap-2">
-                <span id="recordCount" class="text-sm text-gray-600 font-medium"></span>
-                <span id="copyFeedback" class="text-sm font-semibold transition duration-300 opacity-0"></span>
-                 <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">
+<body class="bg-light">
+ <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">
             GO BACK
         </button>
-            </div>
-<div class="container py-4">
-    <div class="row mb-4 align-items-end">
-        <div class="col-md-4">
-            <h2 class="text-primary mb-0">Mark Roll</h2>
-            <small class="text-muted"><?php echo date('D, d M Y'); ?></small>
-        </div>
-        
-        <div class="col-md-3">
-            <label class="form-label fw-bold">Select Class</label>
-            <select class="form-select" id="selectGrade">
-                <?php foreach ($activeGrades as $grade): ?>
-                    <option value="<?php echo htmlspecialchars($grade); ?>">
-                        <?php echo htmlspecialchars($grade); ?>
-                    </option>
-                <?php endforeach; ?>
+<div class="container mt-4">
+    <h2 class="mb-4">Daily Attendance - <?php echo date('F j, Y'); ?></h2>
+
+    <div class="row mb-3">
+        <div class="col-md-4 col-8">
+            <select id="selectGrade" class="form-select">
+                <option value="" disabled selected>Select Grade/Class...</option>
+                <?php 
+                // Loop through the dynamically fetched grades and output the options
+                foreach ($activeGrades as $grade) {
+                    // htmlspecialchars is used for safety in case there are special characters in the grade names
+                    $safeGrade = htmlspecialchars($grade);
+                    echo "<option value=\"{$safeGrade}\">{$safeGrade}</option>";
+                }
+                ?>
             </select>
         </div>
-
-        <div class="col-md-5 text-end">
-            <button class="btn btn-outline-primary me-2" id="load">Load Class</button>
-            <button class="btn btn-success px-4" id="save" disabled>Save Attendance</button>
+        <div class="col-md-2 col-4">
+            <button id="load" class="btn btn-primary w-100">Load</button>
+            
         </div>
     </div>
 
-    <div id="message" class="alert d-none"></div>
+    <div id="message" class="alert d-none" role="alert"></div>
 
-    <div class="attendance-grid" id="btnContainer"></div>
+    <div class="row">
+        <div class="col-12">
+            <div id="btnContainer" class="d-grid gap-2" style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));">
+                </div>
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-5">
+        <div class="col-12 text-center">
+            <button id="save" class="btn btn-success btn-lg px-5" disabled>Save Attendance</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -107,16 +108,23 @@ $(document).ready(function() {
     let studentData = [];
     const date = '<?php echo $date; ?>';
 
-    // The State Machine: N -> Y -> P -> L -> N
-    const nextState = { 'N': 'Y', 'Y': 'P', 'P': 'L', 'L': 'N' };
+    // The State Machine starts at Y (Present), tapping it goes to N (Absent) next.
+    // Flow: Present -> Absent -> Permission -> Late -> Present
+    const nextState = { 'Y': 'N', 'N': 'P', 'P': 'L', 'L': 'Y' };
     const stateLabels = { 'N': 'Absent', 'Y': 'Present', 'P': 'Permission', 'L': 'Late' };
 
     $('#load').click(function() {
         const grade = $('#selectGrade').val();
+        if (!grade) {
+            alert("Please select a grade first.");
+            return;
+        }
+
         $('#btnContainer').empty();
         $('#save').prop('disabled', false).text('Save Attendance');
         $('#message').addClass('d-none');
 
+        // Fetch students for the selected grade
         $.ajax({
             url: 'loadButtons.php',
             type: 'POST',
@@ -125,54 +133,88 @@ $(document).ready(function() {
         }).done(function(data) {
             studentData = data;
             
-            $.each(data, function(index, student) {
-                student.status = 'N'; 
+            // Check if there are students to process
+            if (studentData.length === 0) {
+                $('#message').removeClass('d-none alert-success').addClass('alert-danger').html('No students found for this grade.');
+                $('#save').prop('disabled', true);
+                return;
+            }
+            
+            const studentIDs = studentData.map(s => s.studentID);
+            const isPM = new Date().getHours() >= 12; // Check if current time is 12:00 PM or later
+
+            // Fetch today's existing attendance to check for AM status and 'P' statuses
+            $.ajax({
+                url: 'getTodayAttendance.php',
+                type: 'POST',
+                dataType: 'json',
+                data: { studentIDs: studentIDs, date: date }
+            }).done(function(todayRecords) {
                 
-                const btn = $('<button>')
-                    .addClass('student-btn state-N w-100 d-flex flex-column align-items-center justify-content-center')
-                    .attr('data-index', index)
-                    .attr('data-status', 'N')
-                    .html(`<span>${student.studentID}</span>
-                           <span class="text-truncate w-100 px-1">${student.khmerName}</span>
-                           <span class="status-badge state-label">Absent</span>`);
-                
-                $('#btnContainer').append(btn);
+                $.each(studentData, function(index, student) {
+                    let initialStatus = 'Y'; // Default to Present
+                    
+                    const record = todayRecords[student.studentID];
+                    if (record) {
+                        // If 'P' is already marked today, default to 'P'
+                        if (record.hasPermission) {
+                            initialStatus = 'P';
+                        } 
+                        // If it's the afternoon, default to their AM status
+                        else if (isPM && record.amStatus) {
+                            initialStatus = record.amStatus; 
+                        }
+                    }
+
+                    student.status = initialStatus; 
+                    
+                    const btn = $('<button>')
+                        .addClass('student-btn w-100 d-flex flex-column align-items-center justify-content-center')
+                        .addClass('state-' + initialStatus)
+                        .attr('data-index', index)
+                        .attr('data-status', initialStatus)
+                        .html(`<span>${student.studentID}</span>
+                               <span class="text-truncate w-100 px-1">${student.khmerName}</span>
+                               <span class="status-badge state-label">${stateLabels[initialStatus]}</span>`);
+                    
+                    $('#btnContainer').append(btn);
+                });
+
+                // Attach click handlers AFTER buttons are generated
+                $('#btnContainer').off('click').on('click', '.student-btn', function() {
+                    const btn = $(this);
+                    const index = btn.attr('data-index');
+                    const currentState = btn.attr('data-status');
+                    
+                    const newState = nextState[currentState];
+                    
+                    btn.removeClass('state-' + currentState).addClass('state-' + newState);
+                    btn.attr('data-status', newState);
+                    btn.find('.state-label').text(stateLabels[newState]);
+                    
+                    studentData[index].status = newState;
+                });
+
+            }).fail(function() {
+                alert("Could not check today's previous attendance records.");
             });
+
         }).fail(function(jqXHR, textStatus, errorThrown) {
             alert("Error loading students. Check the console for details.");
             console.log("AJAX Error:", textStatus, errorThrown);
-            console.log("Server responded with:", jqXHR.responseText);
         });
-    });
-
-    // Handle Button Clicks
-    $('#btnContainer').on('click', '.student-btn', function() {
-        const btn = $(this);
-        const index = btn.attr('data-index');
-        const currentState = btn.attr('data-status');
-        
-        const newState = nextState[currentState];
-        
-        btn.removeClass('state-' + currentState).addClass('state-' + newState);
-        btn.attr('data-status', newState);
-        btn.find('.state-label').text(stateLabels[newState]);
-        
-        studentData[index].status = newState;
     });
 
     // Save Data
     $('#save').click(function() {
-        // --- NEW: Grab the exact time right now (e.g., "14:12") ---
         const now = new Date();
         const exactTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         
-        // Append exact time and date to the payload
         $.each(studentData, function(i, s) {
             s.shortTime = exactTime;
             s.shortDate = date;
         });
 
-        // Instantly disable the button to prevent double-clicking
         $('#save').text('Saving...').prop('disabled', true);
 
         $.ajax({
@@ -191,5 +233,6 @@ $(document).ready(function() {
     });
 });
 </script>
+
 </body>
 </html>
