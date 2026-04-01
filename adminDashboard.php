@@ -176,10 +176,7 @@ table { margin: auto; width: 100% !important; }
         <div class = "col-12  text-center">
 
        <a href = "/highschool/findMarksQuickVisual.php" >
-      <button class = "btn btn-primary mb-2"  id = "quickHSAll" data-tooltip  = "High school marks.">HS All</button></a>
-
-     <a href = "/highschool/findMarksAllVisual.php">
-      <button class = "btn btn-primary mb-2"  id = "quickHSone" data-tooltip  = "Check results for one high school student.">HS One student</button></a>
+      <button class = "btn btn-primary mb-2"  id = "quickHSAll" data-tooltip  = "High school marks.">HS Mark List</button></a>
 
 
         <a href = "findPSQuick.php">

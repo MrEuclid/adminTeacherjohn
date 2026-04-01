@@ -1,24 +1,20 @@
 <?php 
-require_once "../authCheckPIO.php";
+require_once "authCheckPIO.php";
 restrictToAdmin();
-include "../connectDatabase.php" ; 
-
+include "includes/connect_db_euclid_pio.php" ; 
+include "includes/date_data.php" ;
 $date = date('d-M-Y') ;
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Data HS</title>
+    <title>Dynamic Data Table with Filtering & Sorting</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
-
-
             font-family: 'Inter', sans-serif;
             background-color: #f1f5f9;
         }
@@ -68,7 +64,7 @@ $date = date('d-M-Y') ;
 
     <div class="max-w-7xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
         <h1 class="text-3xl font-extrabold text-gray-800 mb-6 border-b pb-2">
-            HS Marks Visualisation
+            Find students
         </h1>
 
         <!-- Controls: Search, Button, and Status -->
@@ -120,10 +116,7 @@ $date = date('d-M-Y') ;
         let filteredData = [];
         let sortConfig = { key: null, direction: 'asc' };
         
-        // --- Configuration: Date Keys ---
-        // CRITICAL: All columns containing YYYY-MM-DD dates must be listed here.
-        // I've included common date column names. Add any others specific to your 'findMarks' API.
-        const DATE_KEYS = ['date', 'birth_date', 'created_at', 'Date', 'exam_date']; 
+        // --- NOTE: Mock Data Source is removed ---
         
         /**
          * Fetches JSON data from the specified API endpoint.
@@ -139,8 +132,8 @@ $date = date('d-M-Y') ;
             
             try {
                 // --- ACTUAL FETCH CALL TO YOUR ENDPOINT ---
-            //    const response = await fetch('visualisationSubjectMonthTotalQuickVisual.php');
-                  const response = await fetch('hsTests.php');
+                const response = await fetch('/primaryschool/psStatsAll.php');
+                
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status} - Could not connect to API.`);
                 }
@@ -157,10 +150,6 @@ $date = date('d-M-Y') ;
                 
                 // Clear the status message and render the table
                 document.getElementById('statusMessage').innerHTML = '';
-                
-                // Generate headers once data is loaded
-                generateHeaders(originalData[0]);
-
                 renderTable(filteredData);
                 updateRecordCount(filteredData.length);
 
@@ -171,35 +160,33 @@ $date = date('d-M-Y') ;
         }
 
         /**
-         * Generates the table headers separately.
-         */
-        function generateHeaders(firstRecord) {
-            const tableHead = document.getElementById('tableHead');
-            tableHead.innerHTML = ''; 
-
-            const keys = Object.keys(firstRecord);
-            const headerRow = document.createElement('tr');
-            headerRow.className = 'table-row';
-            
-            keys.forEach(key => {
-                const th = document.createElement('th');
-                th.textContent = formatHeader(key);
-                th.className = 'table-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap';
-                th.dataset.key = key;
-                th.addEventListener('click', () => handleSort(key));
-                headerRow.appendChild(th);
-            });
-            tableHead.appendChild(headerRow);
-        }
-
-        /**
-         * Renders the table content.
+         * Renders the table content and sets up sortable headers.
+         * @param {Array<Object>} data - The array of objects to display.
          */
         function renderTable(data) {
             const tableBody = document.getElementById('tableBody');
+            const tableHead = document.getElementById('tableHead');
             
-            // Generate Body
+            // 1. Generate Header (only on first render, and only if data has been loaded)
+            if (originalData.length > 0 && tableHead.children.length === 0) {
+                const keys = Object.keys(originalData[0]);
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'table-row';
+                
+                keys.forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = formatHeader(key);
+                    th.className = 'table-header px-6 py-3 text-left text-xs font-medium uppercase tracking-wider whitespace-nowrap';
+                    th.dataset.key = key;
+                    th.addEventListener('click', () => handleSort(key));
+                    headerRow.appendChild(th);
+                });
+                tableHead.appendChild(headerRow);
+            }
+
+            // 2. Generate Body
             if (data.length === 0) {
+                // Ensure we get the correct column count from the original data structure
                 const colSpanCount = Object.keys(originalData[0] || {}).length || 1; 
                 tableBody.innerHTML = `<tr><td colspan="${colSpanCount}" class="text-center py-6 text-gray-500">No matching records found.</td></tr>`;
                 return;
@@ -214,14 +201,22 @@ $date = date('d-M-Y') ;
                 return `<tr class="table-row">${cells}</tr>`;
             }).join('');
             
-            // Update header arrows
+            // 3. Update header arrows
             updateHeaderArrows();
         }
 
+        /**
+         * Formats column keys for display.
+         * @param {string} key 
+         */
         function formatHeader(key) {
             return key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim();
         }
         
+        /**
+         * Formats values (e.g., currency).
+         * @param {any} value 
+         */
         function formatValue(value) {
             if (typeof value === 'number' && (value >= 1000 || value <= -1000)) {
                 // Simple currency/large number formatting
@@ -230,6 +225,9 @@ $date = date('d-M-Y') ;
             return value;
         }
 
+        /**
+         * Updates the small arrow indicator on the currently sorted column.
+         */
         function updateHeaderArrows() {
             document.querySelectorAll('#tableHead th').forEach(th => {
                 th.classList.remove('asc', 'desc');
@@ -246,6 +244,7 @@ $date = date('d-M-Y') ;
         
         /**
          * Handles sorting logic when a header is clicked.
+         * @param {string} key - The column key to sort by.
          */
         function handleSort(key) {
             let direction = 'asc';
@@ -260,42 +259,23 @@ $date = date('d-M-Y') ;
             const sortedData = [...filteredData].sort((a, b) => {
                 const valA = a[key];
                 const valB = b[key];
-                
+
+                const numA = parseFloat(valA);
+                const numB = parseFloat(valB);
+
                 let comparison = 0;
 
-                // --- FIX: Explicit Date Comparison ---
-                if (DATE_KEYS.includes(key)) {
-                    // Use Date objects for robust chronological comparison
-                    const dateA = new Date(valA);
-                    const dateB = new Date(valB);
-
-                    // Check for invalid dates
-                    if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
-                        if (dateA.getTime() > dateB.getTime()) comparison = 1;
-                        else if (dateA.getTime() < dateB.getTime()) comparison = -1;
-                    } else {
-                        // Fallback to string sort if parsing fails
-                        const strA = String(valA).toLowerCase();
-                        const strB = String(valB).toLowerCase();
-                        if (strA > strB) comparison = 1;
-                        else if (strA < strB) comparison = -1;
-                    }
+                // Check if both values are valid, finite numbers for numeric sort
+                if (!isNaN(numA) && isFinite(numA) && !isNaN(numB) && isFinite(numB)) {
+                    // Numeric comparison
+                    if (numA > numB) comparison = 1;
+                    else if (numA < numB) comparison = -1;
                 } else {
-                    // --- Standard Numeric/String Comparison ---
-                    const numA = parseFloat(valA);
-                    const numB = parseFloat(valB);
-
-                    // Check if both values are valid numbers
-                    if (!isNaN(numA) && isFinite(numA) && !isNaN(numB) && isFinite(numB)) {
-                        if (numA > numB) comparison = 1;
-                        else if (numA < numB) comparison = -1;
-                    } else {
-                        // Fallback to string comparison
-                        const strA = String(valA).toLowerCase();
-                        const strB = String(valB).toLowerCase();
-                        if (strA > strB) comparison = 1;
-                        else if (strA < strB) comparison = -1;
-                    }
+                    // Fallback to robust string comparison
+                    const strA = String(valA).toLowerCase();
+                    const strB = String(valB).toLowerCase();
+                    if (strA > strB) comparison = 1;
+                    else if (strA < strB) comparison = -1;
                 }
 
                 // Apply direction multiplier
@@ -307,7 +287,8 @@ $date = date('d-M-Y') ;
         }
 
         /**
-         * Handles filtering logic based on the input text.
+         * Handles filtering logic based on the input text, supporting AND/OR/NOT logic.
+         * @param {string} filterText - The text to search for, including logical operators.
          */
         function handleFilter(filterText) {
             const originalQuery = filterText.trim();
@@ -315,35 +296,23 @@ $date = date('d-M-Y') ;
             if (!originalQuery) {
                 filteredData = originalData;
             } else {
+                // 1. Split by OR operators (comma or pipe)
+                // Example: "2025-10 & G7C, Science | NOT Math" -> ["2025-10 & G7C", "Science", "NOT Math"]
                 const orGroups = originalQuery.split(/,|\s*\|\s*/).filter(q => q.trim() !== '');
 
                 filteredData = originalData.filter(item => {
+                    // Item must match AT LEAST ONE OR group (OR logic)
                     return orGroups.some(orGroup => {
+                        // 2. Split each OR group into AND terms (using '&' or space)
+                        // Example: "2025-10 & G7C" -> ["2025-10", "G7C"]
                         const terms = orGroup.split(/&|\s+/).filter(t => t.trim() !== '');
                         
+                        // An OR group must match ALL of its terms (AND logic)
                         return terms.every(term => {
-                            let cleanTerm = term.trim().toLowerCase();
-                            
-                            // Numeric Comparisons
-                            const comparisonMatch = cleanTerm.match(/^([<>]=?)(-?[\d.]+)$/); 
-                            if (comparisonMatch) {
-                                const operator = comparisonMatch[1];
-                                const targetVal = parseFloat(comparisonMatch[2]);
-                                return Object.values(item).some(value => {
-                                    const numVal = parseFloat(value);
-                                    if (isNaN(numVal)) return false; 
-                                    switch (operator) {
-                                        case '>': return numVal > targetVal;
-                                        case '<': return numVal < targetVal;
-                                        case '>=': return numVal >= targetVal;
-                                        case '<=': return numVal <= targetVal;
-                                        default: return false;
-                                    }
-                                });
-                            }
-
-                            // Text Search
                             let isNegated = false;
+                            let cleanTerm = term.trim().toLowerCase();
+
+                            // Process Negation: Check for '-' or 'NOT ' prefix
                             if (cleanTerm.startsWith('-')) {
                                 isNegated = true;
                                 cleanTerm = cleanTerm.substring(1).trim();
@@ -352,19 +321,23 @@ $date = date('d-M-Y') ;
                                 cleanTerm = cleanTerm.substring(4).trim();
                             }
                             
-                            if (!cleanTerm) return true;
+                            if (!cleanTerm) return true; // Ignore empty terms resulting from bad parsing
 
+                            // Check if the item matches the term (substring check across all values)
                             const itemMatchesTerm = Object.values(item).some(value => {
                                 return String(value).toLowerCase().includes(cleanTerm);
                             });
                             
+                            // Apply Negation logic:
+                            // If negated, return true if item DOES NOT match term.
+                            // If not negated, return true if item DOES match term.
                             return isNegated ? !itemMatchesTerm : itemMatchesTerm;
                         });
                     });
                 });
             }
             
-            // Re-apply sort
+            // Re-apply sort (if any) to the newly filtered data
             if (sortConfig.key) {
                 const currentConfig = { ...sortConfig };
                 sortConfig.key = null; 
@@ -376,29 +349,53 @@ $date = date('d-M-Y') ;
             updateRecordCount(filteredData.length);
         }
 
+        /**
+         * Updates the record count display.
+         * @param {number} count 
+         */
         function updateRecordCount(count) {
              document.getElementById('recordCount').textContent = `Displaying ${count} of ${originalData.length} total records.`;
         }
         
+        /**
+         * Shows a temporary feedback message to the user.
+         * @param {string} message 
+         * @param {string} colorClass 
+         */
         function showFeedback(message, colorClass) {
             const feedbackElement = document.getElementById('copyFeedback');
             feedbackElement.textContent = message;
+            // Set opacity to 100% and apply color
             feedbackElement.className = `${colorClass} text-sm font-semibold transition duration-300 opacity-100`;
 
+            // Hide the message after 3 seconds
             setTimeout(() => {
                 feedbackElement.className = `text-sm font-semibold transition duration-300 opacity-0`;
             }, 3000);
         }
         
+        /**
+         * Escapes a value according to standard CSV rules.
+         * @param {any} value 
+         * @returns {string} The CSV-escaped string.
+         */
         function csvEscape(value) {
             let str = String(value);
+            
+            // Step 1: Escape existing double quotes by doubling them
             str = str.replace(/"/g, '""');
+            
+            // Step 2: Check if wrapping is necessary (contains comma, quote, or newline)
             if (str.includes(',') || str.includes('\n') || str.includes('""')) {
                 return `"${str}"`;
             }
             return str;
         }
 
+
+        /**
+         * Copies the current filtered and sorted data to the clipboard in CSV (comma-separated) format.
+         */
         function copyFilteredRecords() {
             if (filteredData.length === 0) {
                 showFeedback("No data to copy.", 'text-red-500');
@@ -406,13 +403,19 @@ $date = date('d-M-Y') ;
             }
 
             const keys = Object.keys(originalData[0]);
+            
+            // 1. Create Header row (CSV format, delimited by comma)
             const header = keys.map(key => formatHeader(key)).join(',');
+            
+            // 2. Create Data rows
             const rows = filteredData.map(item => {
+                // Use csvEscape for each value and join with comma
                 return keys.map(key => csvEscape(item[key])).join(',');
             }).join('\n');
             
             const clipboardText = header + '\n' + rows;
 
+            // 3. Use document.execCommand('copy') (reliable fallback for iFrames)
             const tempTextArea = document.createElement('textarea');
             tempTextArea.value = clipboardText;
             tempTextArea.style.position = 'fixed'; // Keep it off-screen
