@@ -44,6 +44,7 @@ $query = "
     FROM $gradeTable g
     JOIN $studentTable s ON g.$joinCol1 = s.$joinCol2
     WHERE s.$dobColumn IS NOT NULL AND s.$dobColumn != '0000-00-00'
+    AND g.School IN ('SMC', 'PIOHS')
 ";
 
 $result = mysqli_query($dbServer, $query);

@@ -50,9 +50,13 @@ if (!$isLoggedIn && $urlKey !== $donorSecretKey) {
     <h5 class="text-primary fw-bold">Analyzing Student Data...</h5>
     <div id="errorLog" class="text-danger mt-3"></div>
 </div>
-
+ 
 <div class="header-strip">
     <div class="container d-flex justify-content-between align-items-center">
+
+      <button class="btn btn-warning shadow-sm px-6 font-bold" id="back" onclick="history.back()">
+            GO BACK
+        </button>
         <div><h2 class="m-0 fw-light"><i class="fa-solid fa-users-rays me-2"></i>Retention & Inclusion Report</h2></div>
         <div class="d-flex gap-2 no-print align-items-center">
             <select id="yearSelect" class="form-select form-select-sm" style="width: auto;"></select>
