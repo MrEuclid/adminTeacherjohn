@@ -4,9 +4,9 @@
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-// require_once "authCheckPIO.php";
+require_once "authCheckPIO.php";
 // require_once "authConf.php";
-//restrictToAdmin();
+restrictToAdmin();
 
 include "connectDatabase.php";
 include "date_data.php" ;
@@ -242,7 +242,7 @@ table { margin: auto; width: 100% !important; }
       <button class = "btn btn-primary mb-2"  id = "analystreports" data-tooltip  = "Analyst reports.">Analyst reports</button></a> 
 
       <a href = "retentionDashboard.php">
-      <button class = "btn btn-primary mb-2"  id = "retentionreports" data-tooltip  = "Retention reports.">Sponsor reports</button></a>
+      <button class = "btn btn-primary mb-2"  id = "retentionreports" data-tooltip  = "Retention reports.">Retention reports</button></a>
     
   </div></div>
   <div class = "row justify-content-center">

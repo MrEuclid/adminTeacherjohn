@@ -12,33 +12,35 @@ if (!$isLoggedIn && $urlKey !== $donorSecretKey) {
     exit();
 }
 
-include "../connectDatabase.php"; // Adjust path if needed
-header('Content-Type: application/json');
+include "connectDatabase.php"; 
+// header('Content-Type: application/json');
 
 // ==============================================================================
 // 🛑 DATABASE CONFIGURATION 🛑
-// Update these variables to match your exact database table and column names!
 // ==============================================================================
-$gradeTable    = "New_ID_Year_Grade"; // Your table linking students to years/grades
-$studentTable  = "New_Students";          // Your main table holding student details
-$joinCol1      = "Student_ID";         // ID column in the grade table
-$joinCol2      = "id";         // ID column in the student table
-$dobColumn     = "Date_birth";               // Column name for Date of Birth (e.g., 'DOB' or 'DateOfBirth')
-$yearColumn    = "Year";              // Column for the academic year in the grade table
-$gradeColumn   = "Grade";             // Column for the class/grade in the grade table
+$gradeTable    = "New_ID_Year_Grade"; 
+$studentTable  = "New_Students";          
+$joinCol1      = "Student_ID";         
+$joinCol2      = "id";         
+$dobColumn     = "Date_birth";               
+$yearColumn    = "Year";              
+$gradeColumn   = "Grade";             
+$genderColumn  = "Gender"; // NEW: Update this to your gender column name
 // ==============================================================================
 
-// Create the final data structure
 $response = [
-    'yearlyData' => []
+    'yearlyData' => [],
+    'cohorts' => [] 
 ];
 
-// Query to get every student's enrollment year, grade, and date of birth
+// Added s.$genderColumn to the query
 $query = "
     SELECT 
+        g.$joinCol1 AS studentID,
         g.$yearColumn AS enrollYear, 
         g.$gradeColumn AS gradeLabel, 
-        s.$dobColumn AS dateOfBirth
+        s.$dobColumn AS dateOfBirth,
+        s.$genderColumn AS gender
     FROM $gradeTable g
     JOIN $studentTable s ON g.$joinCol1 = s.$joinCol2
     WHERE s.$dobColumn IS NOT NULL AND s.$dobColumn != '0000-00-00'
@@ -51,52 +53,105 @@ if (!$result) {
     exit;
 }
 
+$enrollmentsByYear = []; 
+$studentHistory = []; 
+$studentGender = []; // NEW: Fast lookup for a student's gender
+
 while ($row = mysqli_fetch_assoc($result)) {
-    $yearStr   = $row['enrollYear']; // E.g., "2025" or "2025-2026"
-    $gradeStr  = $row['gradeLabel']; // E.g., "G1", "Grade 2", "3"
+    $yearStr   = $row['enrollYear']; 
+    $gradeStr  = $row['gradeLabel']; 
     $dobStr    = $row['dateOfBirth'];
+    $studentID = $row['studentID'];
     
-    // 1. Extract the actual starting year as an integer (Handles "2025" or "2025-2026")
+    // Save gender (normalized to uppercase first letter, e.g., 'M' or 'F')
+    $studentGender[$studentID] = strtoupper(substr(trim($row['gender']), 0, 1));
+    
     $enrollYearInt = (int)substr(trim($yearStr), 0, 4);
-    if ($enrollYearInt < 2000) continue; // Skip invalid years
+    if ($enrollYearInt < 2000) continue; 
     
-    // 2. Extract the numeric Grade Level from the string
-    // This turns "Grade 4" -> 4, "G12" -> 12, "3" -> 3
     $gradeLevel = (int)preg_replace('/[^0-9]/', '', $gradeStr);
-    
-    // If no number is found (e.g., Kindergarten), you can either skip or assign a level (like 0)
     if ($gradeLevel === 0) continue; 
 
-    // 3. Calculate the student's age AT THE TIME of that specific enrollment year
+    // --- OVERAGE CALCULATION ---
     $birthYear = (int)date('Y', strtotime($dobStr));
     $ageDuringYear = $enrollYearInt - $birthYear;
-    
-    // 4. Apply the Overage Logic: Age > (Grade Level + 5)
-    $expectedAge = $gradeLevel + 5;
+    $expectedAge = $gradeLevel + 6;
     $isOverage = ($ageDuringYear > $expectedAge);
 
-    // 5. Build the nested JSON structure
-    // Initialize the Year if it doesn't exist yet
-    if (!isset($response['yearlyData'][$yearStr])) {
-        $response['yearlyData'][$yearStr] = [];
+    if (!isset($response['yearlyData'][$enrollYearInt])) {
+        $response['yearlyData'][$enrollYearInt] = [];
+    }
+    if (!isset($response['yearlyData'][$enrollYearInt][$gradeStr])) {
+        $response['yearlyData'][$enrollYearInt][$gradeStr] = ['typical' => 0, 'overage' => 0];
     }
     
-    // Initialize the Grade for that Year if it doesn't exist yet
-    if (!isset($response['yearlyData'][$yearStr][$gradeStr])) {
-        $response['yearlyData'][$yearStr][$gradeStr] = [
-            'typical' => 0,
-            'overage' => 0
-        ];
-    }
-    
-    // Increment the appropriate counter
     if ($isOverage) {
-        $response['yearlyData'][$yearStr][$gradeStr]['overage']++;
+        $response['yearlyData'][$enrollYearInt][$gradeStr]['overage']++;
     } else {
-        $response['yearlyData'][$yearStr][$gradeStr]['typical']++;
+        $response['yearlyData'][$enrollYearInt][$gradeStr]['typical']++;
+    }
+
+    // --- BUILD STUDENT HISTORY ---
+    $enrollmentsByYear[$enrollYearInt][] = $studentID;
+    $studentHistory[$studentID][$enrollYearInt] = $gradeLevel;
+}
+
+// --- UNIVERSAL COHORT MATH ---
+$cohortBase = []; 
+
+foreach ($studentHistory as $studentID => $yearsAttended) {
+    $entryYear = min(array_keys($yearsAttended));
+    $entryGrade = $yearsAttended[$entryYear];
+    $cohortBase[$entryYear][$entryGrade][] = $studentID;
+}
+
+ksort($enrollmentsByYear);
+
+foreach ($cohortBase as $baseYear => $grades) {
+    ksort($grades); 
+    foreach ($grades as $baseGrade => $students) {
+        $uniqueStudents = array_unique($students);
+        $baseTotalCount = count($uniqueStudents);
+        
+        if ($baseTotalCount < 2) continue; 
+        
+        // Count starting Boys vs Girls
+        $baseM = 0; $baseF = 0;
+        foreach($uniqueStudents as $id) {
+            if ($studentGender[$id] === 'M') $baseM++;
+            if ($studentGender[$id] === 'F') $baseF++;
+        }
+        
+        foreach ($enrollmentsByYear as $targetYear => $allStudentsInTargetYear) {
+            if ($targetYear >= $baseYear) {
+                $retainedStudents = array_intersect($uniqueStudents, $allStudentsInTargetYear);
+                $retainedTotalCount = count($retainedStudents);
+                
+                // Count retained Boys vs Girls
+                $retM = 0; $retF = 0;
+                foreach($retainedStudents as $id) {
+                    if ($studentGender[$id] === 'M') $retM++;
+                    if ($studentGender[$id] === 'F') $retF++;
+                }
+                
+                $response['cohorts'][$baseYear][$baseGrade][$targetYear] = [
+                    'total' => [
+                        'count' => $retainedTotalCount,
+                        'pct' => round(($retainedTotalCount / $baseTotalCount) * 100, 1)
+                    ],
+                    'M' => [
+                        'count' => $retM,
+                        'pct' => $baseM > 0 ? round(($retM / $baseM) * 100, 1) : 0
+                    ],
+                    'F' => [
+                        'count' => $retF,
+                        'pct' => $baseF > 0 ? round(($retF / $baseF) * 100, 1) : 0
+                    ]
+                ];
+            }
+        }
     }
 }
 
-// Output the final JSON for the dashboard to render
 echo json_encode($response);
 ?>
