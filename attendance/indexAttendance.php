@@ -1,7 +1,7 @@
 <?php
 // Include your database connection
 include "../connectDatabase.php";
-
+date_default_timezone_set('Asia/Phnom_Penh');
 // Set the current date (used by the JavaScript)
 $date = date('Y-m-d');
 
